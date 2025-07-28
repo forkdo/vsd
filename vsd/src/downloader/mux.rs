@@ -63,6 +63,11 @@ pub fn ffmpeg(output: Option<&PathBuf>, temp_files: &[Stream]) -> Result<()> {
                 .iter()
                 .filter(|x| x.media_type == MediaType::Subtitles),
         )
+        .chain(
+            temp_files
+                .iter()
+                .filter(|x| x.media_type == MediaType::Undefined),
+        )
         .collect::<Vec<_>>();
 
     let mut args = Vec::new();
