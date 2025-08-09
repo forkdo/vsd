@@ -1,0 +1,31 @@
+name: build
+
+on:
+  push:
+    branches: ["dev"]
+  pull_request:
+    branches: ["dev"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: true
+      - name: Install just
+        uses: taiki-e/install-action@just
+      - name: Build vsd
+        run: |
+          just install-deps
+          just build
+      - name: Set up upload environment
+        uses: benjlevesque/short-sha@v3.0
+      - name: Upload linux build
+        uses: actions/upload-artifact@v4
+        with:
+          name: "vsd-${{ env.SHA }}-debug-x86_64-unknown-linux-gnu"
+          path: target/debug/vsd
