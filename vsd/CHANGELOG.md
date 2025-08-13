@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-08-12
+
+### Changed
+
+- `save`
+  - Removed `--all-streams`, `--audio-lang`, `--quality`, `--skip-audio`, `--skip-subs`, `--skip-video`, `--subs-lang` flags and merged there functionality into `--select-streams` flag,
+
+### Fixed
+
+- `save`
+  - Subtitles codec detection. ([#58](https://github.com/clitic/vsd/issues/58)).
+
 ## [0.4.1] - 2025-08-10
 
 ### Fixed
@@ -187,7 +199,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2022-06-22
 
-[Unreleased]: https://github.com/clitic/vsd/compare/vsd-0.4.`...HEAD
+[Unreleased]: https://github.com/clitic/vsd/compare/vsd-0.4.2...HEAD
+[0.4.2]: https://github.com/clitic/vsd/compare/vsd-0.4.1...vsd-0.4.2
 [0.4.1]: https://github.com/clitic/vsd/compare/vsd-0.4.0...vsd-0.4.1
 [0.4.0]: https://github.com/clitic/vsd/compare/0.3.3...vsd-0.4.0
 [0.3.3]: https://github.com/clitic/vsd/compare/0.3.2...0.3.3
