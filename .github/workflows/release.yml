@@ -1,0 +1,54 @@
+name: Build on Release
+
+on:
+  release:
+    types:
+      - created
+
+env:
+  CARGO_TERM_COLOR: always
+  RELEASE_DIR: dist
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: true
+      - name: Install just
+        uses: taiki-e/install-action@just
+      - name:
+        run: |
+          # 检查 C 标准库类型
+          if ldd --version 2>&1 | grep -qi "musl"; then
+              LIBC_TYPE="musl"
+          elif ldd --version 2>&1 | grep -qi "glibc"; then
+              LIBC_TYPE="gnu"
+          else
+              LIBC_TYPE="unknown"
+          fi
+          echo "LIBC_TYPE=$LIBC_TYPE" >> $GITHUB_ENV
+      - name: Build vsd
+        run: |
+          just install-deps
+          just build-release
+      - name: Package
+        run: |
+          mkdir "${{ env.RELEASE_DIR }}"
+          tar -cJf "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-${{ matrix.arch }}-unknown-linux-${{ env.LIBC_TYPE }}.tar.xz" target/release/vsd
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: ${{ env.RELEASE_DIR }}/*.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,1 +1,7 @@
 /target/
+# act
+.actrc
+.artifacts
+event.json
+.secrets
+.arcenv
