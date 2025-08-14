@@ -10,45 +10,121 @@ env:
   RELEASE_DIR: dist
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        arch: [amd64, arm64]
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+  build-linux:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
             submodules: true
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
+      - uses: jetsung/install-zig@v1
+        with:
+          version: "0.14.1"
+      - name: Check zig version
+        run: |
+          zig version            
+      - name: Install target for Linux
+        run: |
+          for arch in x86_64 aarch64 loongarch64; do
+            rustup target add $arch-unknown-linux-musl
+          done    
       - name: Install just
         uses: taiki-e/install-action@just
-      - name:
+      - name: Build vsd for Linux
         run: |
-          # 检查 C 标准库类型
-          if ldd --version 2>&1 | grep -qi "musl"; then
-              LIBC_TYPE="musl"
-          elif ldd --version 2>&1 | grep -qi "glibc"; then
-              LIBC_TYPE="gnu"
-          else
-              LIBC_TYPE="unknown"
-          fi
-          echo "LIBC_TYPE=$LIBC_TYPE" >> $GITHUB_ENV
-      - name: Build vsd
+          just install-deps-linux
+          just update-submodules
+          just zigbuild-linux
+      - name: Create release tarballs
         run: |
-          just install-deps
-          just build-release
-      - name: Package
-        run: |
-          mkdir "${{ env.RELEASE_DIR }}"
-          tar -cJf "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-${{ matrix.arch }}-unknown-linux-${{ env.LIBC_TYPE }}.tar.xz" target/release/vsd
+          mkdir ${{ env.RELEASE_DIR }}
+          for arch in x86_64 aarch64 loongarch64; do
+            tar -cJf "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-$arch-unknown-linux-musl.tar.xz" -C target/$arch-unknown-linux-musl/release vsd
+          done    
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: ${{ env.RELEASE_DIR }}/*.tar.xz
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}                       
+
+  build-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: true
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
+      - name: Install target for MacOS
+        run: |
+          for arch in x86_64 aarch64; do
+            rustup target add $arch-apple-darwin
+          done       
+      - name: Install just
+        uses: taiki-e/install-action@just
+      - name: Build vsd for MacOS
+        run: |
+          just install-deps-macos
+          just update-submodules
+          just buildx-macos
+      - name: Create release tarballs
+        run: |
+          mkdir ${{ env.RELEASE_DIR }}
+          for arch in x86_64 aarch64; do
+            tar -cJf "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-$arch-apple-darwin.tar.xz" -C target/$arch-apple-darwin/release vsd
+          done
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: ${{ env.RELEASE_DIR }}/*.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
+
+  build-windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: true
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
+      - name: Install zip utility
+        run: choco install zip -y
+        shell: powershell          
+      - name: Install target for Windows
+        shell: bash
+        run: |
+          for arch in x86_64 aarch64; do
+            rustup target add $arch-pc-windows-msvc
+          done       
+      - name: Install just
+        uses: taiki-e/install-action@just
+      - name: Build vsd for Windows
+        run: |
+          just install-deps-windows
+          just update-submodules
+          just buildx-windows
+      - name: Create release zip files
+        shell: bash
+        run: |
+          mkdir "${{ env.RELEASE_DIR }}"
+          for arch in x86_64 aarch64; do
+            zip -j "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-$arch-pc-windows-msvc.zip" target/$arch-pc-windows-msvc/release/vsd.exe
+          done      
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: ${{ env.RELEASE_DIR }}/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
