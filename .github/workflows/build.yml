@@ -13,19 +13,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
       - uses: actions/checkout@v4
         with:
             submodules: true
-      - name: Install protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          version: "30.1"
+      # - name: Install Protoc
+      #   uses: arduino/setup-protoc@v3
+      - name: Install just
+        uses: taiki-e/install-action@just
       - name: Build vsd
-        run: cargo build -p vsd
+        run: |
+          just install-deps
+          just build-release      
       - name: Set up upload environment
         uses: benjlevesque/short-sha@v3.0
       - name: Upload linux build
         uses: actions/upload-artifact@v4
         with:
-          name: "vsd-${{ env.SHA }}-debug-x86_64-unknown-linux-gnu"
-          path: target/debug/vsd
+          name: "vsd-${{ env.SHA }}-release-x86_64-unknown-linux-gnu"
+          path: target/release/vsd

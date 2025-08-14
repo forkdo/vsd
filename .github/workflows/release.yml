@@ -13,42 +13,76 @@ jobs:
   build:
     strategy:
       matrix:
-        arch: [amd64, arm64]
         include:
-          - arch: amd64
+          - os: linux
+            arch: x86_64
             runner: ubuntu-24.04
-          - arch: arm64
+          - os: linux
+            arch: aarch64
             runner: ubuntu-24.04-arm
+          # macos-x86_64 收费
+          # - os: macos
+          #   arch: x86_64
+          #   runner: macos-15-large          
+          - os: macos
+            arch: aarch64
+            runner: macos-15
+          - os: windows
+            arch: x86_64
+            runner: windows-2025         
+          - os: windows
+            arch: aarch64
+            runner: windows-11-arm
     runs-on: ${{ matrix.runner }}
     steps:
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
       - uses: actions/checkout@v4
         with:
             submodules: true
+      # - name: Install Protoc
+      #   uses: arduino/setup-protoc@v3   
       - name: Install just
         uses: taiki-e/install-action@just
-      - name:
-        run: |
-          # 检查 C 标准库类型
-          if ldd --version 2>&1 | grep -qi "musl"; then
-              LIBC_TYPE="musl"
-          elif ldd --version 2>&1 | grep -qi "glibc"; then
-              LIBC_TYPE="gnu"
-          else
-              LIBC_TYPE="unknown"
-          fi
-          echo "LIBC_TYPE=$LIBC_TYPE" >> $GITHUB_ENV
       - name: Build vsd
         run: |
           just install-deps
           just build-release
-      - name: Package
-        run: |
           mkdir "${{ env.RELEASE_DIR }}"
-          tar -cJf "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-${{ matrix.arch }}-unknown-linux-${{ env.LIBC_TYPE }}.tar.xz" target/release/vsd
+      - name: Check libc type
+        run: |
+          # if ldd --version 2>&1 | grep -qi "musl"; then
+          #     LIBC_TYPE="musl"
+          # elif ldd --version 2>&1 | grep -qi "glibc"; then
+          #     LIBC_TYPE="gnu"
+          # else
+          #     LIBC_TYPE="unknown"
+          # fi
+          if file "target/release/vsd" | grep -q musl; then
+              LIBC_TYPE="musl"
+          else
+              LIBC_TYPE="gnu"
+          fi
+      - name: Package Linux
+        if: matrix.os == 'linux'
+        run: |
+          tar -cJf "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-${{ matrix.arch }}-unknown-linux-${{ env.LIBC_TYPE }}.tar.xz" -C target/release vsd
+      - name: Package MacOS
+        if: matrix.os == 'macos'
+        run: |
+          tar -cJf "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-${{ matrix.arch }}-apple-darwin.tar.xz" -C target/release vsd
+      - name: Package Windows
+        if: matrix.os == 'windows'
+        run: |
+          zip -j "${{ env.RELEASE_DIR }}/vsd-${{ github.event.release.tag_name }}-${{ matrix.arch }}-pc-windows-msvc.zip" target/release/vsd.exe
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
-          files: ${{ env.RELEASE_DIR }}/*.tar.xz
+          files: |
+            ${{ env.RELEASE_DIR }}/*.tar.xz
+            ${{ env.RELEASE_DIR }}/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

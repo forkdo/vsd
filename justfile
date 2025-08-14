@@ -125,10 +125,34 @@ setup:
 #     just update-submodules
 #     @echo "Dependencies installed successfully!"
 
-# Install build dependencies
-install-deps:
-    @echo "Installing build dependencies..."
+install-deps-linux:
+    @echo "Installing Linux dependencies..."
     sudo apt update
     sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler
-    just update-submodules
-    @echo "Dependencies installed successfully!"
+    @echo "Linux dependencies installed!"
+
+install-deps-macos:
+    @echo "Installing macOS dependencies..."
+    brew update
+    brew install openssl pkg-config protobuf
+    @echo "macOS dependencies installed!"
+
+install-deps-windows:
+    @echo "Installing Windows dependencies..."
+    choco install -y openssl protoc || true
+    @echo "Windows dependencies installed!"    
+
+install-deps:
+    @OS_TYPE="$(uname -s)"; \
+    echo "OS TYPE: $OS_TYPE"; \
+    case "$OS_TYPE" in \
+        Linux*) \
+            just install-deps-linux ;; \
+        Darwin*) \
+            just install-deps-macos ;; \
+        CYGWIN*|MINGW*|MSYS*|Windows_NT*) \
+            just install-deps-windows ;; \
+        *) \
+            echo "Unknown OS: $$OS_TYPE, please install dependencies manually." ;; \
+    esac
+    @just update-submodules

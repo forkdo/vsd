@@ -1,4 +1,4 @@
-name: build
+name: Build on Dev
 
 on:
   push:
@@ -11,21 +11,62 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: x86_64
+            runner: ubuntu-24.04
+          - os: linux
+            arch: aarch64
+            runner: ubuntu-24.04-arm
+          # macos-x86_64 收费
+          # - os: macos
+          #   arch: x86_64
+          #   runner: macos-15-large          
+          - os: macos
+            arch: aarch64
+            runner: macos-15
+          - os: windows
+            arch: x86_64
+            runner: windows-2025         
+          - os: windows
+            arch: aarch64
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
     steps:
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
       - uses: actions/checkout@v4
         with:
             submodules: true
+      # - name: Install Protoc
+      #   uses: arduino/setup-protoc@v3
       - name: Install just
         uses: taiki-e/install-action@just
       - name: Build vsd
         run: |
           just install-deps
-          just build
+          just build-release
       - name: Set up upload environment
         uses: benjlevesque/short-sha@v3.0
       - name: Upload linux build
+        if: matrix.runner == 'ubuntu-24.04' || matrix.runner == 'ubuntu-24.04-arm'
         uses: actions/upload-artifact@v4
         with:
-          name: "vsd-${{ env.SHA }}-debug-x86_64-unknown-linux-gnu"
-          path: target/debug/vsd
+          name: "vsd-${{ env.SHA }}-release-${{ matrix.arch }}-unknown-linux-gnu"
+          path: target/release/vsd
+      - name: Upload macos build
+        if: matrix.runner == 'macos-15'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "vsd-${{ env.SHA }}-release-${{ matrix.arch }}-apple-darwin"
+          path: target/release/vsd
+      - name: Upload windows build
+        if: matrix.runner == 'windows-2025'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "vsd-${{ env.SHA }}-release-${{ matrix.arch }}-pc-windows-msvc"
+          path: target/release/vsd.exe
