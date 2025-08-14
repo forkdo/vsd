@@ -53,6 +53,22 @@ docs:
 install:
     cargo install --path vsd
 
+buildx target:
+    cargo build -p vsd --release --target {{target}}
+
+buildx-linux:
+    just buildx x86_64-unknown-linux-musl
+    just buildx aarch64-unknown-linux-musl
+    just buildx loongarch64-unknown-linux-musl
+
+buildx-macos:
+    just buildx x86_64-apple-darwin
+    just buildx aarch64-apple-darwin
+
+buildx-windows:
+    just buildx x86_64-pc-windows-msvc
+    just buildx aarch64-pc-windows-msvc
+
 # Cross-compile for multiple targets (requires cross)
 cross-build:
     cross build --target x86_64-unknown-linux-musl --release -p vsd
@@ -67,6 +83,11 @@ zigbuild target:
 zigbuild-linux:
     just zigbuild x86_64-unknown-linux-musl
     just zigbuild aarch64-unknown-linux-musl
+    just zigbuild loongarch64-unknown-linux-musl
+
+xwin-windows:
+    cargo xwin build -p vsd --release --target x86_64-pc-windows-msvc
+    cargo xwin build -p vsd --release --target aarch64-pc-windows-msvc
 
 # Build Bento4 submodule
 build-bento4:
@@ -111,24 +132,24 @@ setup:
     cargo install cargo-audit cargo-outdated cargo-tarpaulin
     just update-submodules
 
-# # Install build dependencies
-# install-deps:
-#     @echo "Installing build dependencies..."
-#     sudo apt update
-#     sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler
-#     @echo "Installing Rust toolchain..."
-#     rustup component add rustfmt clippy
-#     @echo "Installing cargo tools..."
-#     cargo install cargo-audit cargo-outdated cargo-tarpaulin cargo-zigbuild cargo-xwin
-#     @echo "Adding cross-compilation targets..."
-#     rustup target add aarch64-apple-darwin aarch64-linux-android aarch64-pc-windows-msvc aarch64-unknown-linux-musl x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-musl
-#     just update-submodules
-#     @echo "Dependencies installed successfully!"
+# Install build dependencies for all platforms
+install-deps-all:
+    @echo "Installing build dependencies..."
+    sudo apt update
+    sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler
+    @echo "Installing Rust toolchain..."
+    rustup component add rustfmt clippy
+    @echo "Installing cargo tools..."
+    cargo install cargo-audit cargo-outdated cargo-tarpaulin cargo-zigbuild cargo-xwin
+    @echo "Adding cross-compilation targets..."
+    rustup target add aarch64-apple-darwin aarch64-linux-android aarch64-pc-windows-msvc aarch64-unknown-linux-musl x86_64-apple-darwin x86_64-pc-windows-msvc x86_64-unknown-linux-musl
+    just update-submodules
+    @echo "Dependencies installed successfully!"
 
 install-deps-linux:
     @echo "Installing Linux dependencies..."
     sudo apt update
-    sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler musl-tools
+    sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler
     echo "Installing cargo-zigbuild"
     cargo install cargo-zigbuild    
     @echo "Linux dependencies installed!"

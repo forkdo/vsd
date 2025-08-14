@@ -23,17 +23,17 @@ echo "Installing Rust"
 rustup target add \
   x86_64-unknown-linux-musl \
   aarch64-unknown-linux-musl \
-  loongarch64-unknown-linux-musl
+  loongarch64-unknown-linux-musl \
+  x86_64-pc-windows-msvc \
+  aarch64-pc-windows-msvc
   # x86_64-apple-darwin \
   # aarch64-apple-darwin \
-  # x86_64-pc-windows-msvc \
-  # aarch64-pc-windows-msvc \
 
 echo "Installing cargo-zigbuild"
 cargo install cargo-zigbuild
 
-# echo "Installing cargo-xwin"
-# cargo install cargo-xwin
+echo "Installing cargo-xwin"
+cargo install cargo-xwin
 
 echo "Installing Protoc v$PROTOC_VERSION"
 curl -L https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip -o protoc-$PROTOC_VERSION-linux-x86_64.zip

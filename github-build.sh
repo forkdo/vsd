@@ -92,20 +92,20 @@ cd ../../../
 
 # Windows
 
-# echo "Building aarch64-pc-windows-msvc"
-# cargo xwin build -p vsd --release --target aarch64-pc-windows-msvc
+echo "Building aarch64-pc-windows-msvc"
+cargo xwin build -p vsd --release --target aarch64-pc-windows-msvc
 
-# echo "Packaging aarch64-pc-windows-msvc"
-# cd target/aarch64-pc-windows-msvc/release
-# llvm-readobj vsd.exe --needed-libs
-# zip $RELEASE_DIR/vsd-$VSD_VERSION-aarch64-pc-windows-msvc.zip ./vsd.exe
-# cd ../../../
+echo "Packaging aarch64-pc-windows-msvc"
+cd target/aarch64-pc-windows-msvc/release
+llvm-readobj vsd.exe --needed-libs
+zip $RELEASE_DIR/vsd-$VSD_VERSION-aarch64-pc-windows-msvc.zip ./vsd.exe
+cd ../../../
 
-# echo "Building x86_64-pc-windows-msvc"
-# cargo xwin build -p vsd --release --target x86_64-pc-windows-msvc
+echo "Building x86_64-pc-windows-msvc"
+cargo xwin build -p vsd --release --target x86_64-pc-windows-msvc
 
-# echo "Packaging x86_64-pc-windows-msvc"
-# cd target/x86_64-pc-windows-msvc/release
-# llvm-readobj vsd.exe --needed-libs
-# zip $RELEASE_DIR/vsd-$VSD_VERSION-x86_64-pc-windows-msvc.zip ./vsd.exe
-# cd ../../../
+echo "Packaging x86_64-pc-windows-msvc"
+cd target/x86_64-pc-windows-msvc/release
+llvm-readobj vsd.exe --needed-libs
+zip $RELEASE_DIR/vsd-$VSD_VERSION-x86_64-pc-windows-msvc.zip ./vsd.exe
+cd ../../../
