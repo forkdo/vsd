@@ -11,7 +11,6 @@ env:
 
 jobs:
   build-linux:
-    if: false
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -41,24 +40,23 @@ jobs:
           just zigbuild-linux
       - name: Set up upload environment
         uses: benjlevesque/short-sha@v3.0
-      - name: Upload linux build
+      - name: Upload linux build for x86_64
         uses: actions/upload-artifact@v4
         with:
           name: vsd-${{ env.SHA }}-release-x86_64-unknown-linux-musl
           path: target/x86_64-unknown-linux-musl/release/vsd
-      - name: Upload linux build
+      - name: Upload linux build for aarch64
         uses: actions/upload-artifact@v4
         with:
           name: vsd-${{ env.SHA }}-release-aarch64-unknown-linux-musl
           path: target/aarch64-unknown-linux-musl/release/vsd      
-      - name: Upload linux build
+      - name: Upload linux build for loongarch64
         uses: actions/upload-artifact@v4
         with:
           name: vsd-${{ env.SHA }}-release-loongarch64-unknown-linux-musl
           path: target/loongarch64-unknown-linux-musl/release/vsd                
 
   build-macos:
-    if: false
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -82,12 +80,12 @@ jobs:
           just buildx-macos
       - name: Set up upload environment
         uses: benjlevesque/short-sha@v3.0         
-      - name: Upload macos build
+      - name: Upload macos build for x86_64
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-x86_64-apple-darwin"
           path: target/x86_64-apple-darwin/release/vsd
-      - name: Upload macos build
+      - name: Upload macos build for aarch64
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-aarch64-apple-darwin"
@@ -118,12 +116,12 @@ jobs:
           just buildx-windows
       - name: Set up upload environment
         uses: benjlevesque/short-sha@v3.0         
-      - name: Upload windows build
+      - name: Upload windows build for x86_64
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-x86_64-pc-windows-msvc"
           path: target/x86_64-pc-windows-msvc/release/vsd
-      - name: Upload windows build
+      - name: Upload windows build for aarch64
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-aarch64-pc-windows-msvc"
