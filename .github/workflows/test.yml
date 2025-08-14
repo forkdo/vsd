@@ -2,9 +2,9 @@ name: Build on Test
 
 on:
   push:
-    branches: ["test"]
+    branches: ["dev"]
   pull_request:
-    branches: ["test"]
+    branches: ["dev"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Install Zig (specific version)
         uses: jetsung/install-zig@v1
-        with:
-          version: "0.14.1"
       - name: Show zig version
         run: |
           zig version
