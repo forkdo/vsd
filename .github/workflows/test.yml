@@ -18,8 +18,8 @@ jobs:
             arch: x86_64
     runs-on: ubuntu-24.04
     steps:
-      - name: Install Zig (specific version)
-        uses: jetsung/install-zig@v1
+      - name: Install Zig
+        uses: jetsung/install-zig@v0.0.2
       - name: Show zig version
         run: |
           zig version
