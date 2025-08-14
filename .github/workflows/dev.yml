@@ -42,21 +42,45 @@ jobs:
       - uses: actions/checkout@v4
         with:
             submodules: true
-      # - name: Install Protoc
-      #   uses: arduino/setup-protoc@v3
+      - name:
+        if: matrix.runner == 'ubuntu-24.04'
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          echo "CARGO_BUILD_TARGET=x86_64-unknown-linux-musl" >> $GITHUB_ENV
+      - name:
+        if: matrix.runner == 'ubuntu-24.04-arm'
+        run: |
+          rustup target add aarch64-unknown-linux-musl
+          echo "CARGO_BUILD_TARGET=aarch64-unknown-linux-musl" >> $GITHUB_ENV
       - name: Install just
         uses: taiki-e/install-action@just
       - name: Build vsd
         run: |
           just install-deps
           just build-release
+      - name: Check libc type
+        if: matrix.os == 'linux'
+        run: |
+          # if ldd --version 2>&1 | grep -qi "musl"; then
+          #     LIBC_TYPE="musl"
+          # elif ldd --version 2>&1 | grep -qi "glibc"; then
+          #     LIBC_TYPE="gnu"
+          # else
+          #     LIBC_TYPE="unknown"
+          # fi
+          if file "target/release/vsd" | grep -q musl; then
+              LIBC_TYPE="musl"
+          else
+              LIBC_TYPE="gnu"
+          fi
+          echo "LIBC_TYPE=$LIBC_TYPE" >> $GITHUB_ENV          
       - name: Set up upload environment
         uses: benjlevesque/short-sha@v3.0
       - name: Upload linux build
         if: matrix.os == 'linux'
         uses: actions/upload-artifact@v4
         with:
-          name: "vsd-${{ env.SHA }}-release-${{ matrix.arch }}-unknown-linux-gnu"
+          name: "vsd-${{ env.SHA }}-release-${{ matrix.arch }}-unknown-linux-${{ env.LIBC_TYPE }}"
           path: target/release/vsd
       - name: Upload macos build
         if: matrix.os == 'macos'

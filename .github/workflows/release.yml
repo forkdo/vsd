@@ -52,6 +52,7 @@ jobs:
           just build-release
           mkdir "${{ env.RELEASE_DIR }}"
       - name: Check libc type
+        if: matrix.os == 'linux'
         run: |
           # if ldd --version 2>&1 | grep -qi "musl"; then
           #     LIBC_TYPE="musl"
@@ -65,6 +66,7 @@ jobs:
           else
               LIBC_TYPE="gnu"
           fi
+          echo "LIBC_TYPE=$LIBC_TYPE" >> $GITHUB_ENV
       - name: Package Linux
         if: matrix.os == 'linux'
         run: |
