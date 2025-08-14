@@ -10,42 +10,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          - os: linux
-            archs: "x86_64 aarch64 loongarch64"
-            runner: ubuntu-24.04
-          - os: macos
-            archs:  "x86_64 aarch64"
-            runner: macos-15          
-          - os: windows
-            archs:  "x86_64 aarch64"
-            runner: windows-2025           
-          # - os: linux
-          #   arch: x86_64
-          #   runner: ubuntu-24.04
-          # - os: linux
-          #   arch: aarch64
-          #   runner: ubuntu-24.04-arm
-          # - os: linux
-          #   arch: loongarch64
-          #   runner: ubuntu-24.04            
-          # # macos-x86_64 收费
-          # # - os: macos
-          # #   arch: x86_64
-          # #   runner: macos-15-large          
-          # - os: macos
-          #   arch: aarch64
-          #   runner: macos-15
-          # - os: windows
-          #   arch: x86_64
-          #   runner: windows-2025         
-          # - os: windows
-          #   arch: aarch64
-          #   runner: windows-11-arm
-    runs-on: ${{ matrix.runner }}
+  build-linux:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,92 +21,107 @@ jobs:
           rustup update
           rustc --version
       - uses: jetsung/install-zig@v1
-        if: matrix.os == 'linux'
         with:
           version: "0.14.1"
       - name: Check zig version
-        if: matrix.os == 'linux'
         run: |
           zig version            
       - name: Install target for Linux
-        if: matrix.os == 'linux'
         run: |
-          for arch in ${{ matrix.archs }}; do
+          for arch in x86_64 aarch64 loongarch64; do
             rustup target add $arch-unknown-linux-musl
-          done
-      - name: Install target for MacOS
-        if: matrix.os == 'macos'
-        run: |
-          for arch in ${{ matrix.archs }}; do
-            rustup target add $arch-apple-darwin
-          done
-      - name: Install target for Windows
-        if: matrix.os == 'windows'
-        run: |
-          for arch in ${{ matrix.archs }}; do
-            rustup target add $arch-pc-windows-msvc
-          done          
+          done    
       - name: Install just
         uses: taiki-e/install-action@just
       - name: Build vsd for Linux
-        if: matrix.os == 'linux'
         run: |
           just install-deps-linux
           just update-submodules
           just zigbuild-linux
-      - name: Build vsd for MacOS
-        if: matrix.os == 'macos'
-        run: |
-          just install-deps-macos
-          just update-submodules
-          just buildx-macos
-      - name: Build vsd for Windows
-        if: matrix.os == 'windows'
-        run: |
-          just install-deps-windows
-          just update-submodules
-          just buildx-windows  
       - name: Set up upload environment
         uses: benjlevesque/short-sha@v3.0
       - name: Upload linux build
-        if: matrix.os == 'linux'
         uses: actions/upload-artifact@v4
         with:
           name: vsd-${{ env.SHA }}-release-x86_64-unknown-linux-musl
           path: target/x86_64-unknown-linux-musl/release/vsd
       - name: Upload linux build
-        if: matrix.os == 'linux'
         uses: actions/upload-artifact@v4
         with:
           name: vsd-${{ env.SHA }}-release-aarch64-unknown-linux-musl
           path: target/aarch64-unknown-linux-musl/release/vsd      
       - name: Upload linux build
-        if: matrix.os == 'linux'
         uses: actions/upload-artifact@v4
         with:
           name: vsd-${{ env.SHA }}-release-loongarch64-unknown-linux-musl
           path: target/loongarch64-unknown-linux-musl/release/vsd                
+
+  build-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: true
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
+      - name: Install target for MacOS
+        run: |
+          for arch in x86_64 aarch64; do
+            rustup target add $arch-apple-darwin
+          done       
+      - name: Install just
+        uses: taiki-e/install-action@just
+      - name: Build vsd for MacOS
+        run: |
+          just install-deps-macos
+          just update-submodules
+          just buildx-macos
+      - name: Set up upload environment
+        uses: benjlevesque/short-sha@v3.0         
       - name: Upload macos build
-        if: matrix.os == 'macos'
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-x86_64-apple-darwin"
           path: target/x86_64-apple-darwin/release/vsd
       - name: Upload macos build
-        if: matrix.os == 'macos'
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-aarch64-apple-darwin"
-          path: target/aarch64-apple-darwin/release/vsd          
+          path: target/aarch64-apple-darwin/release/vsd
+
+  build-windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: true
+      - name: Update Rust
+        run: |
+          rustup update
+          rustc --version
+      - name: Install target for Windows
+        run: |
+          for arch in x86_64 aarch64; do
+            rustup target add $arch-pc-windows-msvc
+          done       
+      - name: Install just
+        uses: taiki-e/install-action@just
+      - name: Build vsd for Windows
+        run: |
+          just install-deps-windows
+          just update-submodules
+          just buildx-windows
+      - name: Set up upload environment
+        uses: benjlevesque/short-sha@v3.0         
       - name: Upload windows build
-        if: matrix.os == 'windows'
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-x86_64-pc-windows-msvc"
-          path: target/x86_64-pc-windows-msvc/release/vsd.exe
+          path: target/x86_64-pc-windows-msvc/release/vsd
       - name: Upload windows build
-        if: matrix.os == 'windows'
         uses: actions/upload-artifact@v4
         with:
           name: "vsd-${{ env.SHA }}-release-aarch64-pc-windows-msvc"
-          path: target/aarch64-pc-windows-msvc/release/vsd.exe
+          path: target/aarch64-pc-windows-msvc/release/vsd          
