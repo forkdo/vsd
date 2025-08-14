@@ -128,7 +128,7 @@ setup:
 install-deps-linux:
     @echo "Installing Linux dependencies..."
     sudo apt update
-    sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler
+    sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler musl-tools
     @echo "Linux dependencies installed!"
 
 install-deps-macos:
