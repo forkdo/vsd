@@ -129,6 +129,8 @@ install-deps-linux:
     @echo "Installing Linux dependencies..."
     sudo apt update
     sudo apt install -y build-essential libssl-dev pkg-config protobuf-compiler musl-tools
+    echo "Installing cargo-zigbuild"
+    cargo install cargo-zigbuild    
     @echo "Linux dependencies installed!"
 
 install-deps-macos:
