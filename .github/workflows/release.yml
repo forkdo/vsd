@@ -98,6 +98,9 @@ jobs:
         run: |
           rustup update
           rustc --version
+      - name: Install zip utility
+        run: choco install zip -y
+        shell: powershell          
       - name: Install target for Windows
         shell: bash
         run: |
