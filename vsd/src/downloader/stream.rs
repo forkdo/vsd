@@ -113,7 +113,7 @@ fn download_stream(
     base_url: &Option<Url>,
     client: &Client,
     downloaded_bytes: &mut usize,
-    mut decrypter: Decrypter,
+    decrypter: Decrypter,
     estimated_bytes: usize,
     no_decrypt: bool,
     no_merge: bool,
@@ -137,6 +137,10 @@ fn download_stream(
     let mut threads = Vec::with_capacity(stream.segments.len());
     let timer = Arc::new(Instant::now());
 
+    let mut default_kid = None;
+    let mut widevine_kid = None;
+    let mut stream_decrypter = decrypter.clone();
+
     for (i, segment) in stream.segments.iter().enumerate() {
         if let Some(map) = &segment.map {
             let url = base_url.join(&map.uri)?;
@@ -149,31 +153,21 @@ fn download_stream(
             let response = request.send()?;
             let bytes = response.bytes()?;
 
-            //             Pssh {
-            //     key_ids: [
-            //         KeyId {
-            //             system_type: PlayReady,
-            //             value: "000000003c42c8c86331202020202020",
-            //         },
-            //         KeyId {
-            //             system_type: WideVine,
-            //             value: "00000000423cc8c86331202020202020",
-            //         },
-            //     ],
-            //     system_ids: [
-            //         "9a04f07998404286ab92e65be0885f95",
-            //         "edef8ba979d64acea3c827dcd51d21ed",
-            //     ],
-            // }
-            // println!("{:#?}", vsd_mp4::pssh::Pssh::new(&bytes).unwrap());
+            default_kid = vsd_mp4::pssh::default_kid(&bytes)?.or(stream.default_kid());
+            widevine_kid = vsd_mp4::pssh::Pssh::new(&bytes)?
+                .key_ids
+                .into_iter()
+                .find_map(|x| match x.system_type {
+                    vsd_mp4::pssh::KeyIdSystemType::WideVine => Some(x.value),
+                    _ => None,
+                });
 
-            // println!("{:?}", vsd_mp4::pssh::default_kid(&bytes));
             init_seg = Some(bytes.to_vec())
         }
 
         if !no_decrypt {
             if increment_iv {
-                decrypter.increment_iv();
+                stream_decrypter.increment_iv();
             }
 
             if let Some(key) = &segment.key {
@@ -184,7 +178,7 @@ fn download_stream(
                         let response = request.send()?;
                         let bytes = response.bytes()?;
 
-                        decrypter = Decrypter::new_hls_aes(
+                        stream_decrypter = Decrypter::new_hls_aes(
                             key.key(&bytes)?,
                             key.iv(stream.media_sequence)?,
                             &key.method,
@@ -196,12 +190,30 @@ fn download_stream(
                     }
                     KeyMethod::Mp4Decrypt => {
                         if let Decrypter::Mp4Decrypt(kid_key_pairs) = &decrypter {
-                            if let Some(default_kid) = stream.default_kid() {
+                            // We already checked this before hand so unwraping is safe.
+                            if let Some(default_kid) = &default_kid {
+                                let key = if default_kid == "00000000000000000000000000000000" {
+                                    if widevine_kid.is_none() {
+                                        bail!(
+                                            "couldn't determine which widevine key to be mapped for this stream's zero kid."
+                                        );
+                                    }
+
+                                    kid_key_pairs.get(widevine_kid.as_ref().unwrap()).unwrap()
+                                } else {
+                                    kid_key_pairs.get(default_kid).unwrap()
+                                };
+
+                                stream_decrypter = Decrypter::Mp4Decrypt(HashMap::from([(
+                                    default_kid.to_owned(),
+                                    key.to_owned(),
+                                )]));
+
                                 pb.lock().unwrap().write(format!(
                                     "        {} {}:{}",
                                     "Key".colorize("bold red"),
                                     default_kid,
-                                    kid_key_pairs.get(&default_kid).unwrap(), // We already checked this before hand
+                                    key,
                                 ))?;
                             }
                         } else {
@@ -221,7 +233,7 @@ fn download_stream(
         }
 
         threads.push(Thread {
-            decrypter: decrypter.clone(),
+            decrypter: stream_decrypter.clone(),
             downloaded_bytes: *downloaded_bytes,
             estimated_bytes,
             index: i,
@@ -233,7 +245,7 @@ fn download_stream(
             timer: timer.clone(),
         });
 
-        if decrypter.is_none() {
+        if stream_decrypter.is_none() {
             init_seg = None;
         }
     }

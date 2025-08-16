@@ -107,12 +107,13 @@ pub fn check_key_exists_for_kid(
 pub fn check_unsupported_encryptions(streams: &Vec<MediaPlaylist>) -> Result<()> {
     for stream in streams {
         if let Some(Segment { key: Some(x), .. }) = stream.segments.first()
-            && let KeyMethod::Other(x) = &x.method {
-                bail!(
-                    "{} decryption is not supported. Use --no-decrypt flag to download encrypted streams.",
-                    x,
-                );
-            }
+            && let KeyMethod::Other(x) = &x.method
+        {
+            bail!(
+                "{} decryption is not supported. Use --no-decrypt flag to download encrypted streams.",
+                x,
+            );
+        }
     }
 
     Ok(())
@@ -148,9 +149,18 @@ pub fn extract_default_kids(
             }
 
             let response = request.send()?;
-            let pssh = Pssh::new(&response.bytes()?).map_err(|x| anyhow!(x))?;
+            let bytes = response.bytes()?;
+
+            let default_kid = vsd_mp4::pssh::default_kid(&bytes)?;
+            let pssh = Pssh::new(&bytes).map_err(|x| anyhow!(x))?;
 
             for kid in pssh.key_ids {
+                if default_kid == Some("00000000000000000000000000000000".to_owned())
+                    && matches!(kid.system_type, vsd_mp4::pssh::KeyIdSystemType::WideVine)
+                {
+                    default_kids.insert(kid.value.clone());
+                }
+
                 if !parsed_kids.contains(&kid.value) {
                     parsed_kids.insert(kid.value.clone());
                     println!(

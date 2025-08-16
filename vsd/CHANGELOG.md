@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2025-08-16
+
+### Added
+
+- `save`
+  - New `--subs-codec` flag.
+
+### Fixed
+
+- `save`
+  - Decryption bug fixes. ([#54](https://github.com/clitic/vsd/issues/54), [#61](https://github.com/clitic/vsd/issues/61)).
+  - Download size estimations.
+
 ## [0.4.2] - 2025-08-12
 
 ### Changed
@@ -199,7 +212,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2022-06-22
 
-[Unreleased]: https://github.com/clitic/vsd/compare/vsd-0.4.2...HEAD
+[Unreleased]: https://github.com/clitic/vsd/compare/vsd-0.4.3...HEAD
+[0.4.3]: https://github.com/clitic/vsd/compare/vsd-0.4.2...vsd-0.4.3
 [0.4.2]: https://github.com/clitic/vsd/compare/vsd-0.4.1...vsd-0.4.2
 [0.4.1]: https://github.com/clitic/vsd/compare/vsd-0.4.0...vsd-0.4.1
 [0.4.0]: https://github.com/clitic/vsd/compare/0.3.3...vsd-0.4.0
